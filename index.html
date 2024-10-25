@@ -349,8 +349,7 @@ map.on('load', function () {
         .then(data => {
             window.originalSource1Data = data; 
             addGeoJsonData('https://web.fulcrumapp.com/shares/7720c6835056cfa0.geojson', 'Source1');
-                        // Apply filter immediately
-                        filterDataBasedOnVisibilityAndDate();
+
         });
 });
 
@@ -425,6 +424,8 @@ function addGeoJsonData(geojsonUrl, sourceId) {
                     'fill-opacity': 0.5
                 }
             });
+// Apply filter immediately
+filterDataBasedOnVisibilityAndDate();
 
 
 // Create a popup
@@ -512,6 +513,7 @@ window.onclick = function(event) {
     }
 };
         });
+
 }
 
     </script>
