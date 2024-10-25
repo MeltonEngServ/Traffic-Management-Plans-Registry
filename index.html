@@ -124,7 +124,7 @@
 
     <div id="legend">
         <div class="legend-key" data-layer="Road Closed">
-            <div class="legend-color" style="background-color: #da0796;"></div>
+            <div class="legend-color" style="background-color: #db0000;"></div>
             <span>Road Closed</span>
         </div>
         <div class="legend-key" data-layer="Lane Closure">
@@ -144,8 +144,8 @@
             <span>No Traffic Impacts</span>
         </div>
         <div class="legend-key" data-layer="Not Defined">
-            <div class="legend-color" style="background-color: #cb0d0c;"></div>
-            <span>Not Defined</span>
+            <div class="legend-color" style="background-color: #cf04b4;"></div>
+            <span>Traffic Impact Not Defined</span>
         </div>
     </div>
     
@@ -349,6 +349,8 @@ map.on('load', function () {
         .then(data => {
             window.originalSource1Data = data; 
             addGeoJsonData('https://web.fulcrumapp.com/shares/7720c6835056cfa0.geojson', 'Source1');
+                        // Apply filter immediately
+                        filterDataBasedOnVisibilityAndDate();
         });
 });
 
@@ -512,8 +514,6 @@ window.onclick = function(event) {
         });
 }
 
-
-// Add formatting for mobile support (?) 
     </script>
 </body>
 </html>
