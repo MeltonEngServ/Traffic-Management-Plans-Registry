@@ -95,9 +95,9 @@
 .modal-content {
     background-color: #fefefe;
     margin: 10% auto;
-    padding: 10px; 
+    padding: 15px; 
     border: 1px solid #888;
-    width: 25%;
+    max-width: 75%;
     max-height: 80%; 
     overflow-y: auto; 
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
@@ -575,6 +575,28 @@ layers.forEach(layer => {
         popup.remove();
     });
 
+
+    function formatDate(dateString) {
+    const date = new Date(dateString);
+    
+    if (isNaN(date)) return 'N/A'; // Return 'N/A' if the date is invalid
+
+    const day = date.getDate();
+    const month = date.toLocaleString('default', { month: 'short' });
+    const year = date.getFullYear();
+
+    // Add suffix to day
+    const suffix = (day) => {
+        const j = day % 10, k = day % 100;
+        if (j === 1 && k !== 11) return day + "st";
+        if (j === 2 && k !== 12) return day + "nd";
+        if (j === 3 && k !== 13) return day + "rd";
+        return day + "th";
+    };
+
+    return `${suffix(day)} of ${month}, ${year}`;
+}
+
     // Click event to show modal popup
     map.on('click', layer, (e) => {
         const properties = e.features[0].properties;
@@ -584,11 +606,11 @@ layers.forEach(layer => {
         // Array of fields
         const fields = [
             { label: 'Status', value: properties.status },
-            { label: 'From Road', value: properties.from_road },
-            { label: 'To Road', value: properties.to_road },
+            { label: 'From', value: properties.from_road },
+            { label: 'To', value: properties.to_road },
             { label: 'Description of Works', value: properties.description_of_works },
-            { label: 'Road Work Start Date', value: properties.road_work_start_date },
-            { label: 'Road Work End Date', value: properties.road_work_end_date },
+            { label: 'Road Work Start Date', value: formatDate(properties.road_work_start_date) },
+            { label: 'Road Work End Date', value: formatDate(properties.road_work_end_date) },
             { label: 'Traffic Impact', value: properties.traffic_impact },
             { label: 'Road Work Type', value: properties.road_work_type },
             { label: 'Expected Delay', value: properties.expected_delay }
