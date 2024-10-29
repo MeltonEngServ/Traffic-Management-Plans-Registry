@@ -185,17 +185,7 @@
             visibilityStates[layerId] = true; 
         });
     
-        // Add event listeners to legend items
-        document.querySelectorAll('.legend-key').forEach(item => {
-            item.addEventListener('click', () => {
-                const layerId = item.getAttribute('data-layer');
-                const currentVisibility = visibilityStates[layerId] ? 'visible' : 'none';
-                const newVisibility = currentVisibility === 'visible' ? 'none' : 'visible';
-                visibilityStates[layerId] = newVisibility === 'visible';
-                item.style.opacity = visibilityStates[layerId] ? '1' : '0.5';
-                filterDataBasedOnVisibilityAndDate(); 
-            });
-        });
+
 
    
 // Bind search box to area   
@@ -284,19 +274,14 @@ function parseDateString(dateString) {
     return new Date(year, month - 1, day);
 }
 
+let visibleStatuses = [];  
+
 // Function to filter data based on selected date and visible statuses
 function filterDataBasedOnVisibilityAndDate() {
     const geojsonData = window.originalSource1Data; 
-    const visibleStatuses = Object.keys(visibilityStates).filter(layerId => visibilityStates[layerId]);
     const selectedDate = new Date(dateInput.value);
     
-    // Check validity
-    if (isNaN(selectedDate.getTime())) {
-        console.error("Selected date is invalid:", selectedDate);
-        return;
-    }
 
-    // Set the selected date to the start of the day
     selectedDate.setHours(0, 0, 0, 0);
 
     // Filter features based on visible statuses and date
@@ -306,15 +291,15 @@ function filterDataBasedOnVisibilityAndDate() {
 
         const roadWorkStart = parseDateString(startDateStr); 
         const roadWorkEnd = parseDateString(endDateStr);
-        
-        const isStatusVisible = feature.properties.status && visibleStatuses.includes(feature.properties.status.trim());
 
-        // Check date logic (mayb add an "active/planned" option, ie active check between, future planned checks all that havent occurred yet ie., today<end date (no start date considered))
+        // Check date validity
         const isDateValid = (roadWorkStart && roadWorkEnd) 
             ? (selectedDate >= roadWorkStart && selectedDate <= roadWorkEnd)
             : (roadWorkStart ? selectedDate >= roadWorkStart : roadWorkEnd && selectedDate <= roadWorkEnd);
 
-        return isStatusVisible && isDateValid;
+        const isStatusVisible = visibleStatuses.length === 0 || (feature.properties.status && visibleStatuses.includes(feature.properties.status.trim()));
+
+        return isDateValid && isStatusVisible;
     });
 
     const filteredGeoJson = {
@@ -326,19 +311,52 @@ function filterDataBasedOnVisibilityAndDate() {
     map.getSource('Source1').setData(filteredGeoJson);
 }
 
-        // Event listener for date input (manual input)
-        dateInput.addEventListener('change', function() {
-            const selectedDate = this.value;
-            slider.value = new Date(selectedDate).getTime(); 
-            filterDataBasedOnVisibilityAndDate();
-        });
+// Event listener to legend items
+document.querySelectorAll('.legend-key').forEach(item => {
+    item.addEventListener('click', () => {
+        const layerId = item.getAttribute('data-layer');
+
+        // Toggle the status in visibleStatuses
+        if (visibleStatuses.includes(layerId)) {
+            // If already in visibleStatuses, remove it
+            visibleStatuses = visibleStatuses.filter(status => status !== layerId);
+        } else {
+            // If not in visibleStatuses, add it
+            visibleStatuses.push(layerId);
+        }
+
+        // Check if no filters are selected
+        if (visibleStatuses.length === 0) {
+            // Set all legend items to full opacity
+            document.querySelectorAll('.legend-key').forEach(legendItem => {
+                legendItem.style.opacity = '1';
+            });
+        } else {
+            // Update opacity of all legend items based on selection
+            document.querySelectorAll('.legend-key').forEach(legendItem => {
+                const legendLayerId = legendItem.getAttribute('data-layer');
+                legendItem.style.opacity = visibleStatuses.includes(legendLayerId) ? '1' : '0.5';
+            });
+        }
+
+        // Apply the filter based on updated visibleStatuses
+        filterDataBasedOnVisibilityAndDate();
+    });
+});
+
+// Event listener for date input (manual input)
+dateInput.addEventListener('change', function() {
+    const selectedDate = this.value;
+    slider.value = new Date(selectedDate).getTime(); 
+    filterDataBasedOnVisibilityAndDate();
+});
     
-        // Event listener for slider input (date slider)
-        slider.addEventListener('input', function() {
-            const selectedDate = new Date(parseInt(this.value));
-            dateInput.value = selectedDate.toISOString().slice(0, 10); 
-            filterDataBasedOnVisibilityAndDate();
-        });
+// Event listener for slider input (date slider)
+slider.addEventListener('input', function() {
+    const selectedDate = new Date(parseInt(this.value));
+    dateInput.value = selectedDate.toISOString().slice(0, 10); 
+    filterDataBasedOnVisibilityAndDate();
+});
     
 // Initialize map with sources
 map.on('load', function () {
@@ -392,102 +410,101 @@ Object.keys(icons).forEach(key => {
     });
 });
 
-
-
-    // Icon layer
-    map.addLayer({
-        'id': `${sourceId}-icon-layer`,
-        'type': 'symbol',
-        'source': sourceId,
-        'filter': [
-            'any',
-            ['==', ['get', 'status'], 'Road Closed'],
-            ['==', ['get', 'status'], ' Lane Closure'],
-            ['==', ['get', 'status'], 'Truck Site Access']
+// Icon layer
+map.addLayer({
+    'id': `${sourceId}-icon-layer`,
+    'type': 'symbol',
+    'source': sourceId,
+    'filter': [
+        'any',
+        ['==', ['get', 'status'], 'Road Closed'],
+        ['==', ['get', 'status'], ' Lane Closure'],
+        ['==', ['get', 'status'], 'Truck Site Access']
+    ],
+    'layout': {
+        'icon-image': [
+            'case',
+            ['==', ['get', 'status'], 'Road Closed'], 'road-closed',
+            ['==', ['get', 'status'], ' Lane Closure'], 'lane-closure',
+            ['==', ['get', 'status'], 'Truck Site Access'], 'truck-site-access',
+            'default-icon' // Optional default if no match found
         ],
-        'layout': {
-            'icon-image': [
-                'case',
-                ['==', ['get', 'status'], 'Road Closed'], 'road-closed',
-                ['==', ['get', 'status'], ' Lane Closure'], 'lane-closure',
-                ['==', ['get', 'status'], 'Truck Site Access'], 'truck-site-access',
-                'default-icon' // Optional default if no match found
-            ],
-            'icon-size': 0.7,
-            'icon-allow-overlap': true
-        }
-    });
+        'icon-size': 0.7,
+        'icon-allow-overlap': true
+    }
+});
 
 
 
-            // Points layer
-            map.addLayer({
-                'id': `${sourceId}-points-layer`,
-                'type': 'circle',
-                'source': sourceId,
-                'filter': ['==', '$type', 'Point'],
-                'paint': {
-                    'circle-radius': 5,
-                    'circle-color': [
-                        'case',
-                        ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-                        ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-                        ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
-                        '#888888'
-                    ],
-                    // Control opacity based on icon availability
-                    'circle-opacity': [
-                        'case',
-                        ['==', ['get', 'status'], 'Road Closed'], 0, 
-                        ['==', ['get', 'status'], ' Lane Closure'], 0, 
-                        ['==', ['get', 'status'], 'Truck Site Access'], 0, 
-                        1
-                    ]
-                }
-            });
+// Points layer
+map.addLayer({
+    'id': `${sourceId}-points-layer`,
+    'type': 'circle',
+    'source': sourceId,
+    'filter': ['==', '$type', 'Point'],
+    'paint': {
+        'circle-radius': 5,
+        'circle-color': [
+            'case',
+            ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
+            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
+            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
+            '#888888'
+        ],
+        // Control opacity based on icon availability
+        'circle-opacity': [
+            'case',
+            ['==', ['get', 'status'], 'Road Closed'], 0, 
+            ['==', ['get', 'status'], ' Lane Closure'], 0, 
+            ['==', ['get', 'status'], 'Truck Site Access'], 0, 
+            1
+        ]
+    }
+});
 
 
-            // Line layer
-            map.addLayer({
-                'id': `${sourceId}-lines-layer`,
-                'type': 'line',
-                'source': sourceId,
-                'filter': ['==', '$type', 'LineString'],
-                'paint': {
-                    'line-width': 3,
-                    'line-color': [
-                        'case',
-                        ['==', ['get', 'status'], 'Road Closed'], '#db0000',
-                        ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
-                        ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-                        ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
-                        ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-                        ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
-                        '#888888'
-                    ]
-                }
-            });
+// Line layer
+map.addLayer({
+    'id': `${sourceId}-lines-layer`,
+    'type': 'line',
+    'source': sourceId,
+    'filter': ['==', '$type', 'LineString'],
+    'paint': {
+        'line-width': 3,
+        'line-color': [
+            'case',
+            ['==', ['get', 'status'], 'Road Closed'], '#db0000',
+            ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
+            ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
+            ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
+            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
+            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
+            '#888888'
+        ]
+    }
+});
 
-            // Polygon layer
-            map.addLayer({
-                'id': `${sourceId}-polygons-layer`,
-                'type': 'fill',
-                'source': sourceId,
-                'filter': ['==', '$type', 'Polygon'],
-                'paint': {
-                    'fill-color': [
-                        'case',
-                        ['==', ['get', 'status'], 'Road Closed'], '#db0000',
-                        ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
-                        ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-                        ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
-                        ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-                        ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
-                        '#888888'
-                    ],
-                    'fill-opacity': 0.5
-                }
-            });
+// Polygon layer
+map.addLayer({
+    'id': `${sourceId}-polygons-layer`,
+    'type': 'fill',
+    'source': sourceId,
+    'filter': ['==', '$type', 'Polygon'],
+    'paint': {
+        'fill-color': [
+            'case',
+            ['==', ['get', 'status'], 'Road Closed'], '#db0000',
+            ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
+            ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
+            ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
+            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
+            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
+            '#888888'
+        ],
+        'fill-opacity': 0.5
+    }
+});
+
 // Apply filter immediately
 filterDataBasedOnVisibilityAndDate();
 
