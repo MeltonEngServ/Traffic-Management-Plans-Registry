@@ -9,6 +9,9 @@
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+        .mapboxgl-ctrl-logo {
+            display: none !important;
+        }
         .tooltip {
             background-color: white;
             padding: 5px;
@@ -21,7 +24,7 @@
         }
         #legend {
             position: absolute;
-            bottom: 10px;
+            bottom: 60px;
             left: 10px;
             background-color: white;
             padding: 10px;
@@ -52,7 +55,7 @@
         #dateFilter {
             position: absolute;
             bottom: 10px;
-            right: 10px;
+            left: 10px;
             background-color: white;
             padding: 10px;
             border-radius: 5px;
@@ -135,11 +138,11 @@
 
 <div id="legend">
     <div class="legend-key" data-layer="Road Closed">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png" alt="Road Closed Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png" alt="Road Closed Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Road Closed</span>
     </div>
     <div class="legend-key" data-layer="Lane Closure">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Lane Closure</span>
     </div>
     <div class="legend-key" data-layer="Temporary Traffic Signals">
@@ -147,15 +150,15 @@
         <span>Temporary Traffic Signals</span>
     </div>
     <div class="legend-key" data-layer="Truck Site Access">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png" alt="Truck Site Access Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png" alt="Truck Site Access Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Truck Site Access</span>
     </div>
     <div class="legend-key" data-layer="No Traffic Impacts">
-        <div class="legend-color" style="background-color: #87d30f; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></div>
+        <div class="legend-color" style="background-color: #87d30f;"></div>
         <span>No Traffic Impacts</span>
     </div>
     <div class="legend-key" data-layer="Not Defined">
-        <div class="legend-color" style="background-color: #cf04b4; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></div>
+        <div class="legend-color" style="background-color: #cf04b4;"></div>
         <span>Traffic Impact Not Defined</span>
     </div>
 </div>
@@ -186,6 +189,30 @@
         });
     
 
+function focusOnCurrentLocation() {
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const userCoords = [position.coords.longitude, position.coords.latitude];
+            
+            // Set map center and zoom level to focus on user's location
+            map.flyTo({
+                center: userCoords,
+                zoom: 13.5, 
+                essential: true 
+            });
+        }, error => {
+            console.error("Error retrieving location:", error);
+        });
+    } else {
+        console.error("Geolocation is not supported by this browser.");
+    }
+}
+
+// Call this function to focus on the current location when the map loads or as needed
+focusOnCurrentLocation();
+
+// Add navigation controls to the map
+map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
    
 // Bind search box to area   
@@ -277,7 +304,7 @@ function parseDateString(dateString) {
 let visibleStatuses = [];  
 
 // Function to filter data based on selected date and visible statuses
-function filterDataBasedOnVisibilityAndDate() {
+function FilterData() {
     const geojsonData = window.originalSource1Data; 
     const selectedDate = new Date(dateInput.value);
     
@@ -340,7 +367,7 @@ document.querySelectorAll('.legend-key').forEach(item => {
         }
 
         // Apply the filter based on updated visibleStatuses
-        filterDataBasedOnVisibilityAndDate();
+        FilterData();
     });
 });
 
@@ -348,14 +375,14 @@ document.querySelectorAll('.legend-key').forEach(item => {
 dateInput.addEventListener('change', function() {
     const selectedDate = this.value;
     slider.value = new Date(selectedDate).getTime(); 
-    filterDataBasedOnVisibilityAndDate();
+    FilterData();
 });
     
 // Event listener for slider input (date slider)
 slider.addEventListener('input', function() {
     const selectedDate = new Date(parseInt(this.value));
     dateInput.value = selectedDate.toISOString().slice(0, 10); 
-    filterDataBasedOnVisibilityAndDate();
+    FilterData();
 });
     
 // Initialize map with sources
@@ -381,6 +408,23 @@ map.on('load', function () {
             addGeoJsonData('https://web.fulcrumapp.com/shares/7720c6835056cfa0.geojson', 'Source1');
 
         });
+        
+    const icons = {
+        'road-closed': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png',
+        'lane-closure': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png',
+        'truck-site-access': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png'
+    };
+
+    // Load each icon image
+    Object.keys(icons).forEach(key => {
+        map.loadImage(icons[key], (error, image) => {
+            if (error) {
+                console.error(`Error loading ${key}:`, error);
+                return;
+            }
+            map.addImage(key, image);
+        });
+    });
 });
 
 function addGeoJsonData(geojsonUrl, sourceId) {
@@ -391,24 +435,6 @@ function addGeoJsonData(geojsonUrl, sourceId) {
                 type: 'geojson',
                 data: data
             });
-
-
-const icons = {
-    'road-closed': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png',
-    'lane-closure': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png',
-    'truck-site-access': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png'
-};
-
-// Load each icon image
-Object.keys(icons).forEach(key => {
-    map.loadImage(icons[key], (error, image) => {
-        if (error) {
-            console.error(`Error loading ${key}:`, error);
-            return;
-        }
-        map.addImage(key, image);
-    });
-});
 
 // Icon layer
 map.addLayer({
@@ -506,7 +532,7 @@ map.addLayer({
 });
 
 // Apply filter immediately
-filterDataBasedOnVisibilityAndDate();
+FilterData();
 
 
 // Create a popup
