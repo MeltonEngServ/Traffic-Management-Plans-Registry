@@ -122,32 +122,33 @@
         </style>
 
 
-    <div id="legend">
-        <div class="legend-key" data-layer="Road Closed">
-            <div class="legend-color" style="background-color: #db0000;"></div>
-            <span>Road Closed</span>
-        </div>
-        <div class="legend-key" data-layer="Lane Closure">
-            <div class="legend-color" style="background-color: #ff8819;"></div>
-            <span>Lane Closure</span>
-        </div>
-        <div class="legend-key" data-layer="Temporary Traffic Signals">
-            <div class="legend-color" style="background-color: #294184;"></div>
-            <span>Temporary Traffic Signals</span>
-        </div>
-        <div class="legend-key" data-layer="Truck Site Access">
-            <div class="legend-color" style="background-color: #1891c9;"></div>
-            <span>Truck Site Access</span>
-        </div>
-        <div class="legend-key" data-layer="No Traffic Impacts">
-            <div class="legend-color" style="background-color: #87d30f;"></div>
-            <span>No Traffic Impacts</span>
-        </div>
-        <div class="legend-key" data-layer="Not Defined">
-            <div class="legend-color" style="background-color: #cf04b4;"></div>
-            <span>Traffic Impact Not Defined</span>
-        </div>
+<div id="legend">
+    <div class="legend-key" data-layer="Road Closed">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png" alt="Road Closed Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <span>Road Closed</span>
     </div>
+    <div class="legend-key" data-layer="Lane Closure">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <span>Lane Closure</span>
+    </div>
+    <div class="legend-key" data-layer="Temporary Traffic Signals">
+        <div class="legend-color" style="background-color: #294184;"></div>
+        <span>Temporary Traffic Signals</span>
+    </div>
+    <div class="legend-key" data-layer="Truck Site Access">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png" alt="Truck Site Access Icon" style="width: 20px; height: 20px; margin-right: 5px;">
+        <span>Truck Site Access</span>
+    </div>
+    <div class="legend-key" data-layer="No Traffic Impacts">
+        <div class="legend-color" style="background-color: #87d30f; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></div>
+        <span>No Traffic Impacts</span>
+    </div>
+    <div class="legend-key" data-layer="Not Defined">
+        <div class="legend-color" style="background-color: #cf04b4; width: 20px; height: 20px; display: inline-block; margin-right: 5px;"></div>
+        <span>Traffic Impact Not Defined</span>
+    </div>
+</div>
+
     
     <div id="dateFilter">
         <input type="date" id="dateInput" />
@@ -362,6 +363,52 @@ function addGeoJsonData(geojsonUrl, sourceId) {
                 data: data
             });
 
+
+const icons = {
+    'road-closed': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png',
+    'lane-closure': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png',
+    'truck-site-access': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png'
+};
+
+// Load each icon image
+Object.keys(icons).forEach(key => {
+    map.loadImage(icons[key], (error, image) => {
+        if (error) {
+            console.error(`Error loading ${key}:`, error);
+            return;
+        }
+        map.addImage(key, image);
+    });
+});
+
+
+
+    // Icon layer
+    map.addLayer({
+        'id': `${sourceId}-icon-layer`,
+        'type': 'symbol',
+        'source': sourceId,
+        'filter': [
+            'any',
+            ['==', ['get', 'status'], 'Road Closed'],
+            ['==', ['get', 'status'], ' Lane Closure'],
+            ['==', ['get', 'status'], 'Truck Site Access']
+        ],
+        'layout': {
+            'icon-image': [
+                'case',
+                ['==', ['get', 'status'], 'Road Closed'], 'road-closed',
+                ['==', ['get', 'status'], ' Lane Closure'], 'lane-closure',
+                ['==', ['get', 'status'], 'Truck Site Access'], 'truck-site-access',
+                'default-icon' // Optional default if no match found
+            ],
+            'icon-size': 0.7,
+            'icon-allow-overlap': true
+        }
+    });
+
+
+
             // Points layer
             map.addLayer({
                 'id': `${sourceId}-points-layer`,
@@ -372,16 +419,22 @@ function addGeoJsonData(geojsonUrl, sourceId) {
                     'circle-radius': 5,
                     'circle-color': [
                         'case',
-                        ['==', ['get', 'status'], 'Road Closed'], '#db0000',
-                        ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
                         ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-                        ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
                         ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
                         ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
                         '#888888'
+                    ],
+                    // Control opacity based on icon availability
+                    'circle-opacity': [
+                        'case',
+                        ['==', ['get', 'status'], 'Road Closed'], 0, 
+                        ['==', ['get', 'status'], ' Lane Closure'], 0, 
+                        ['==', ['get', 'status'], 'Truck Site Access'], 0, 
+                        1
                     ]
                 }
             });
+
 
             // Line layer
             map.addLayer({
@@ -435,7 +488,7 @@ const popup = new mapboxgl.Popup({
 });
 
 // Define layers to interact with (points, lines, polygons)
-const layers = [`${sourceId}-points-layer`, `${sourceId}-lines-layer`, `${sourceId}-polygons-layer`];
+const layers = [`${sourceId}-points-layer`, `${sourceId}-lines-layer`, `${sourceId}-polygons-layer`, `${sourceId}-icon-layer`];
 
 // Show tooltip on hover
 layers.forEach(layer => {
