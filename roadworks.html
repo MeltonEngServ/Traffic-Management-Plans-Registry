@@ -6,21 +6,28 @@
     <title>Road works, delays and events</title>
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js'></script>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css' rel='stylesheet' />
+</head>
+<body>
+    <div id="map"></div>
+    <div class="tooltip" id="tooltip"></div>
+    <div id="searchBar">
+        <input type="text" id="address" placeholder="Enter an address" autocomplete="off" />
+        <button id="searchBtn">Search</button>
+        <div id="suggestions" style="position: absolute; background: white; border: 1px solid #ccc; z-index: 10; display: none;"></div>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <div id="modal-body"></div>
+        </div>
+    </div>
+
     <style>
         body { margin: 0; padding: 0; }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         .mapboxgl-ctrl-logo {
             display: none !important;
-        }
-        .tooltip {
-            background-color: white;
-            padding: 5px;
-            border-radius: 3px;
-            box-shadow: 0 0 3px rgba(0, 0, 0, 0.5);
-            pointer-events: none;
-            position: absolute;
-            z-index: 10;
-            display: none;
         }
         #legend {
             position: absolute;
@@ -61,25 +68,7 @@
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
-    </style>
-</head>
-<body>
-    <div id="map"></div>
-    <div class="tooltip" id="tooltip"></div>
-    <div id="searchBar">
-        <input type="text" id="address" placeholder="Enter an address" autocomplete="off" />
-        <button id="searchBtn">Search</button>
-        <div id="suggestions" style="position: absolute; background: white; border: 1px solid #ccc; z-index: 10; display: none;"></div>
-    </div>
 
-    <div id="modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button">&times;</span>
-            <div id="modal-body"></div>
-        </div>
-    </div>
-
-    <style>
         .modal {
             display: none;
             position: fixed; 
@@ -132,19 +121,15 @@
                 width: 95%;
             }
         }
-        </style>
         
+        #legend {
+            user-select: none; 
+        }
 
-
-<style>
-#legend {
-    user-select: none; 
-}
-
-.legend-key {
-    cursor: pointer;
-}
-</style>
+        .legend-key {
+            cursor: pointer;
+        }
+        </style>
 
 
 <div id="legend">
@@ -219,7 +204,6 @@ function focusOnCurrentLocation() {
     }
 }
 
-// Call this function to focus on the current location when the map loads or as needed
 focusOnCurrentLocation();
 
 // Add navigation controls to the map
@@ -545,6 +529,27 @@ map.addLayer({
 // Apply filter immediately
 FilterData();
 
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    
+    if (isNaN(date)) return 'N/A'; // Return 'N/A' if the date is invalid
+
+    const day = date.getDate();
+    const month = date.toLocaleString('default', { month: 'short' }).substring(0, 3);
+    const year = date.getFullYear();
+
+    // Add suffix to day
+    const suffix = (day) => {
+        const j = day % 10, k = day % 100;
+        if (j === 1 && k !== 11) return day + "st";
+        if (j === 2 && k !== 12) return day + "nd";
+        if (j === 3 && k !== 13) return day + "rd";
+        return day + "th";
+    };
+
+    return `${suffix(day)} of ${month}, ${year}`;
+}
+
 
 // Create a popup
 const popup = new mapboxgl.Popup({
@@ -566,8 +571,8 @@ layers.forEach(layer => {
         const tooltipContent = `
             <strong>Road Name:</strong> ${properties.road || 'N/A'}<br>
             <strong>Status:</strong> ${properties.status || 'N/A'}<br>
-            <strong>Road Work Start Date:</strong> ${properties.road_work_start_date || 'N/A'}<br>
-            <strong>Road Work End Date:</strong> ${properties.road_work_end_date || 'N/A'}
+            <strong>Road Work Start Date:</strong> ${formatDate(properties.road_work_start_date) || 'N/A'}<br>
+            <strong>Road Work End Date:</strong> ${formatDate(properties.road_work_end_date) || 'N/A'}
         `;
 
         while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
@@ -586,27 +591,6 @@ layers.forEach(layer => {
         popup.remove();
     });
 
-
-    function formatDate(dateString) {
-    const date = new Date(dateString);
-    
-    if (isNaN(date)) return 'N/A'; // Return 'N/A' if the date is invalid
-
-    const day = date.getDate();
-    const month = date.toLocaleString('default', { month: 'short' });
-    const year = date.getFullYear();
-
-    // Add suffix to day
-    const suffix = (day) => {
-        const j = day % 10, k = day % 100;
-        if (j === 1 && k !== 11) return day + "st";
-        if (j === 2 && k !== 12) return day + "nd";
-        if (j === 3 && k !== 13) return day + "rd";
-        return day + "th";
-    };
-
-    return `${suffix(day)} of ${month}, ${year}`;
-}
 
     // Click event to show modal popup
     map.on('click', layer, (e) => {
