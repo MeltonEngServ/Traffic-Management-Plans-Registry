@@ -302,9 +302,11 @@ let visibleStatuses = [];
 function FilterData() {
     const geojsonData = window.originalSource1Data; 
     const selectedDate = new Date(dateInput.value);
-    
-
     selectedDate.setHours(0, 0, 0, 0);
+
+    // Calculate the date 6 months ago from today
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     // Filter features based on visible statuses and date
     const filteredFeatures = geojsonData.features.filter(feature => {
@@ -314,6 +316,9 @@ function FilterData() {
         const roadWorkStart = parseDateString(startDateStr); 
         const roadWorkEnd = parseDateString(endDateStr);
 
+        // Check if the end date is "N/A" and the start date is older than 6 months
+        const shouldHideRecord = (roadWorkEnd === null && roadWorkStart < sixMonthsAgo);
+
         // Check date validity
         const isDateValid = (roadWorkStart && roadWorkEnd) 
             ? (selectedDate >= roadWorkStart && selectedDate <= roadWorkEnd)
@@ -321,7 +326,7 @@ function FilterData() {
 
         const isStatusVisible = visibleStatuses.length === 0 || (feature.properties.status && visibleStatuses.includes(feature.properties.status.trim()));
 
-        return isDateValid && isStatusVisible;
+        return !shouldHideRecord && isDateValid && isStatusVisible;
     });
 
     const filteredGeoJson = {
@@ -529,16 +534,17 @@ map.addLayer({
 // Apply filter immediately
 FilterData();
 
+
+// Function to formate date for user readability
 function formatDate(dateString) {
     const date = new Date(dateString);
     
-    if (isNaN(date)) return 'N/A'; // Return 'N/A' if the date is invalid
+    if (isNaN(date)) return 'N/A';
 
     const day = date.getDate();
     const month = date.toLocaleString('default', { month: 'short' }).substring(0, 3);
     const year = date.getFullYear();
 
-    // Add suffix to day
     const suffix = (day) => {
         const j = day % 10, k = day % 100;
         if (j === 1 && k !== 11) return day + "st";
@@ -547,7 +553,7 @@ function formatDate(dateString) {
         return day + "th";
     };
 
-    return `${suffix(day)} of ${month}, ${year}`;
+    return `${suffix(day)} ${month}, ${year}`;
 }
 
 
