@@ -12,7 +12,6 @@
     <div class="tooltip" id="tooltip"></div>
     <div id="searchBar">
         <input type="text" id="address" placeholder="Enter an address" autocomplete="off" />
-        <button id="searchBtn">Search</button>
         <div id="suggestions" style="position: absolute; background: white; border: 1px solid #ccc; z-index: 10; display: none;"></div>
     </div>
 
@@ -34,7 +33,7 @@
             bottom: 60px;
             left: 10px;
             background-color: white;
-            padding: 10px;
+            padding: 7.5px;
             border-radius: 5px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
@@ -141,13 +140,13 @@
         <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Lane Closure</span>
     </div>
-    <div class="legend-key" data-layer="Temporary Traffic Signals">
-        <div class="legend-color" style="background-color: #294184;"></div>
-        <span>Temporary Traffic Signals</span>
-    </div>
     <div class="legend-key" data-layer="Truck Site Access">
         <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png" alt="Truck Site Access Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Truck Site Access</span>
+    </div>
+    <div class="legend-key" data-layer="Temporary Traffic Signals">
+        <div class="legend-color" style="background-color: #294184;"></div>
+        <span>Temporary Traffic Signals</span>
     </div>
     <div class="legend-key" data-layer="No Traffic Impacts">
         <div class="legend-color" style="background-color: #87d30f;"></div>
