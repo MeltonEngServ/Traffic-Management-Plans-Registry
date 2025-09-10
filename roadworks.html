@@ -140,21 +140,9 @@
         <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Lane Closure</span>
     </div>
-    <div class="legend-key" data-layer="Truck Site Access">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png" alt="Truck Site Access Icon" style="width: 25px; height: 25px; margin-right: 5px;">
-        <span>Truck Site Access</span>
-    </div>
     <div class="legend-key" data-layer="Temporary Traffic Signals">
         <div class="legend-color" style="background-color: #294184;"></div>
         <span>Temporary Traffic Signals</span>
-    </div>
-    <div class="legend-key" data-layer="No Traffic Impacts">
-        <div class="legend-color" style="background-color: #87d30f;"></div>
-        <span>No Traffic Impacts</span>
-    </div>
-    <div class="legend-key" data-layer="Not Defined">
-        <div class="legend-color" style="background-color: #cf04b4;"></div>
-        <span>Traffic Impact Not Defined</span>
     </div>
 </div>
 
@@ -307,24 +295,23 @@ function FilterData() {
     const sixMonthsAgo = new Date();
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
-    // Filter features based on visible statuses and date
+    // Only show specific statuses
+    const allowedStatuses = ['Road Closed', 'Lane Closure', 'Temporary Traffic Signals'];
+
+    // Filter features based on allowed statuses, visible statuses, and date
     const filteredFeatures = geojsonData.features.filter(feature => {
+        const status = feature.properties.status && feature.properties.status.trim();
+        if (!allowedStatuses.includes(status)) return false;
+
         const startDateStr = feature.properties.road_work_start_date;
         const endDateStr = feature.properties.road_work_end_date;
-
         const roadWorkStart = parseDateString(startDateStr); 
         const roadWorkEnd = parseDateString(endDateStr);
-
-        // Check if the end date is "N/A" and the start date is older than 6 months
         const shouldHideRecord = (roadWorkEnd === null && roadWorkStart < sixMonthsAgo);
-
-        // Check date validity
         const isDateValid = (roadWorkStart && roadWorkEnd) 
             ? (selectedDate >= roadWorkStart && selectedDate <= roadWorkEnd)
             : (roadWorkStart ? selectedDate >= roadWorkStart : roadWorkEnd && selectedDate <= roadWorkEnd);
-
-        const isStatusVisible = visibleStatuses.length === 0 || (feature.properties.status && visibleStatuses.includes(feature.properties.status.trim()));
-
+        const isStatusVisible = visibleStatuses.length === 0 || (status && visibleStatuses.includes(status));
         return !shouldHideRecord && isDateValid && isStatusVisible;
     });
 
@@ -410,8 +397,7 @@ map.on('load', function () {
         
     const icons = {
         'road-closed': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png',
-        'lane-closure': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png',
-        'truck-site-access': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/truck-site-access-icon.png'
+        'lane-closure': 'https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png'
     };
 
     // Load each icon image
@@ -443,15 +429,13 @@ map.addLayer({
     'filter': [
         'any',
         ['==', ['get', 'status'], 'Road Closed'],
-        ['==', ['get', 'status'], ' Lane Closure'],
-        ['==', ['get', 'status'], 'Truck Site Access']
+        ['==', ['get', 'status'], ' Lane Closure']
     ],
     'layout': {
         'icon-image': [
             'case',
             ['==', ['get', 'status'], 'Road Closed'], 'road-closed',
             ['==', ['get', 'status'], ' Lane Closure'], 'lane-closure',
-            ['==', ['get', 'status'], 'Truck Site Access'], 'truck-site-access',
             'default-icon' // Optional default if no match found
         ],
         'icon-size': 0.7,
@@ -472,16 +456,13 @@ map.addLayer({
         'circle-color': [
             'case',
             ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
             '#888888'
         ],
         // Control opacity based on icon availability
         'circle-opacity': [
             'case',
             ['==', ['get', 'status'], 'Road Closed'], 0, 
-            ['==', ['get', 'status'], ' Lane Closure'], 0, 
-            ['==', ['get', 'status'], 'Truck Site Access'], 0, 
+            ['==', ['get', 'status'], ' Lane Closure'], 0,
             1
         ]
     }
@@ -501,9 +482,6 @@ map.addLayer({
             ['==', ['get', 'status'], 'Road Closed'], '#db0000',
             ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
             ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-            ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
-            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
             '#888888'
         ]
     }
@@ -521,9 +499,6 @@ map.addLayer({
             ['==', ['get', 'status'], 'Road Closed'], '#db0000',
             ['==', ['get', 'status'], ' Lane Closure'], '#ff8819',
             ['==', ['get', 'status'], 'Temporary Traffic Signals'], '#294184',
-            ['==', ['get', 'status'], 'Truck Site Access'], '#1891c9',
-            ['==', ['get', 'status'], 'No Traffic Impacts'], '#87d30f',
-            ['==', ['get', 'status'], 'Not Defined'], '#cf04b4',
             '#888888'
         ],
         'fill-opacity': 0.5
