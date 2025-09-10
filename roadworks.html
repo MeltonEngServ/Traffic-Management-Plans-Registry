@@ -297,10 +297,13 @@ function FilterData() {
     // Only show specific statuses
     const allowedStatuses = ['Road Closed', 'Lane Closure', 'Temporary Traffic Signals'];
 
-    // Filter features based on allowed statuses, visible statuses, and date
+    // Filter features based on allowed statuses, visible statuses, date, and show_on_map field
     const filteredFeatures = geojsonData.features.filter(feature => {
         const status = feature.properties.status && feature.properties.status.trim();
         if (!allowedStatuses.includes(status)) return false;
+
+        // Hide if show_on_map is explicitly set to "no"
+        if (feature.properties.show_on_map === "no") return false;
 
         const startDateStr = feature.properties.road_work_start_date;
         const endDateStr = feature.properties.road_work_end_date;
@@ -582,7 +585,7 @@ layers.forEach(layer => {
             { label: 'Status', value: properties.status },
             { label: 'From', value: properties.from_road },
             { label: 'To', value: properties.to_road },
-            { label: 'Description of Works', value: properties.description_of_works },
+            { label: 'Description of Works', value: properties.website_description },
             { label: 'Road Work Start Date', value: formatDate(properties.road_work_start_date) },
             { label: 'Road Work End Date', value: formatDate(properties.road_work_end_date) },
             { label: 'Traffic Impact', value: properties.traffic_impact },
@@ -597,9 +600,52 @@ layers.forEach(layer => {
             }
         });
 
+        // Display images if website_image field exists
+        if (properties.website_image) {
+            let imageIds = Array.isArray(properties.website_image)
+                ? properties.website_image
+                : String(properties.website_image).split(',').map(id => id.trim()).filter(Boolean);
+            if (imageIds.length > 0) {
+                modalContent += '<div style="margin-top:10px;"><br>';
+                imageIds.forEach(id => {
+                    modalContent += `<img src="https://web.fulcrumapp.com/shares/7720c6835056cfa0/photos/${id}" alt="Roadwork Image" class="enlargeable-image" style="max-width:100%;margin-bottom:8px;border-radius:4px;cursor:pointer;" data-imgsrc="https://web.fulcrumapp.com/shares/7720c6835056cfa0/photos/${id}" />`;
+                });
+                modalContent += '</div>';
+            }
+        }
+
         // Set the modal body content
         document.getElementById('modal-body').innerHTML = modalContent;
         document.getElementById('modal').style.display = 'block';
+
+        // Add click event to enlargeable images
+        setTimeout(() => {
+            document.querySelectorAll('.enlargeable-image').forEach(img => {
+                img.onclick = function() {
+                    const src = this.getAttribute('data-imgsrc');
+                    const overlay = document.createElement('div');
+                    overlay.id = 'image-overlay-modal';
+                    overlay.style.position = 'fixed';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100vw';
+                    overlay.style.height = '100vh';
+                    overlay.style.background = 'rgba(0,0,0,0.8)';
+                    overlay.style.display = 'flex';
+                    overlay.style.alignItems = 'center';
+                    overlay.style.justifyContent = 'center';
+                    overlay.style.zIndex = '9999';
+                    overlay.innerHTML = `<span style='position:absolute;top:20px;right:40px;font-size:40px;color:#fff;cursor:pointer;' id='close-overlay'>&times;</span><img src='${src}' style='max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 2px 10px #000;' />`;
+                    document.body.appendChild(overlay);
+                    document.getElementById('close-overlay').onclick = function() {
+                        overlay.remove();
+                    };
+                    overlay.onclick = function(e) {
+                        if (e.target === overlay) overlay.remove();
+                    };
+                };
+            });
+        }, 100);
     });
 });
 
