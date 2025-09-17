@@ -30,7 +30,7 @@
         }
         #legend {
             position: absolute;
-            bottom: 60px;
+            bottom: 20px;
             left: 10px;
             background-color: white;
             padding: 7.5px;
@@ -128,6 +128,12 @@
         .legend-key {
             cursor: pointer;
         }
+        #legend, #legend * {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+        }
+        #searchBar input[type="text"] {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+        }
         </style>
 
 
@@ -140,16 +146,7 @@
         <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Lane Closure</span>
     </div>
-    <div class="legend-key" data-layer="Temporary Traffic Signals">
-        <div class="legend-color" style="background-color: #294184;"></div>
-        <span>Temporary Traffic Signals</span>
-    </div>
 </div>
-
-    <div id="dateFilter">
-        <input type="date" id="dateInput" />
-        <input type="range" id="slider" min="0" max="100" />
-    </div>
     
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoibWVsdG9uZ2lzZGV2IiwiYSI6ImNtN2R6dmVzajA5N3gyaW9ocGxmc3QzdncifQ.cIKsH3me3VO5FXG2h5mumg';
@@ -287,34 +284,30 @@ let visibleStatuses = [];
 // Function to filter data based on selected date and visible statuses
 function FilterData() {
     const geojsonData = window.originalSource1Data; 
-    const selectedDate = new Date(dateInput.value);
-    selectedDate.setHours(0, 0, 0, 0);
-
-    // Calculate the date 6 months ago from today
-    const sixMonthsAgo = new Date();
-    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const twoWeeksFromToday = new Date(today);
+    twoWeeksFromToday.setDate(today.getDate() + 14);
 
     // Only show specific statuses
-    const allowedStatuses = ['Road Closed', 'Lane Closure', 'Temporary Traffic Signals'];
+    const allowedStatuses = ['Road Closed', 'Lane Closure'];
 
-    // Filter features based on allowed statuses, visible statuses, date, and show_on_map field
+    // Filter features based on allowed statuses, visible statuses, and show_on_map field
     const filteredFeatures = geojsonData.features.filter(feature => {
         const status = feature.properties.status && feature.properties.status.trim();
         if (!allowedStatuses.includes(status)) return false;
-
-        // Hide if show_on_map is explicitly set to "no"
         if (feature.properties.show_on_map === "no") return false;
 
         const startDateStr = feature.properties.road_work_start_date;
         const endDateStr = feature.properties.road_work_end_date;
         const roadWorkStart = parseDateString(startDateStr); 
         const roadWorkEnd = parseDateString(endDateStr);
-        const shouldHideRecord = (roadWorkEnd === null && roadWorkStart < sixMonthsAgo);
-        const isDateValid = (roadWorkStart && roadWorkEnd) 
-            ? (selectedDate >= roadWorkStart && selectedDate <= roadWorkEnd)
-            : (roadWorkStart ? selectedDate >= roadWorkStart : roadWorkEnd && selectedDate <= roadWorkEnd);
+
+        // Show if roadwork is currently active or will start in the next 2 weeks
+        const isCurrent = roadWorkStart && roadWorkEnd && today >= roadWorkStart && today <= roadWorkEnd;
+        const isUpcoming = roadWorkStart && roadWorkStart > today && roadWorkStart <= twoWeeksFromToday;
         const isStatusVisible = visibleStatuses.length === 0 || (status && visibleStatuses.includes(status));
-        return !shouldHideRecord && isDateValid && isStatusVisible;
+        return (isCurrent || isUpcoming) && isStatusVisible;
     });
 
     const filteredGeoJson = {
@@ -359,34 +352,9 @@ document.querySelectorAll('.legend-key').forEach(item => {
     });
 });
 
-// Event listener for date input (manual input)
-dateInput.addEventListener('change', function() {
-    const selectedDate = this.value;
-    slider.value = new Date(selectedDate).getTime(); 
-    FilterData();
-});
-    
-// Event listener for slider input (date slider)
-slider.addEventListener('input', function() {
-    const selectedDate = new Date(parseInt(this.value));
-    dateInput.value = selectedDate.toISOString().slice(0, 10); 
-    FilterData();
-});
-    
 // Initialize map with sources
 map.on('load', function () {
     const today = new Date();
-    const sixMonthsPast = new Date();
-    sixMonthsPast.setMonth(today.getMonth() - 6);
-
-    const sixMonthsFuture = new Date();
-    sixMonthsFuture.setMonth(today.getMonth() + 6);
-
-    // Update slider attributes
-    slider.min = sixMonthsPast.getTime();
-    slider.max = sixMonthsFuture.getTime();
-    slider.value = today.getTime();
-    dateInput.value = today.toISOString().slice(0, 10);
 
     // Fetch and store the original data for filtering
     fetch('https://web.fulcrumapp.com/shares/7720c6835056cfa0.geojson')
