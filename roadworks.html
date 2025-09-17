@@ -198,13 +198,12 @@
     </style>
 
 <div id="legend">
-    <div class="legend-title">Legend</div>
     <div class="legend-key" data-layer="Road Closed">
-        <img class="legend-icon" src="assets/road-closed-icon.png" alt="Road Closed Icon">
-        <span>Road Closure</span>
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png" alt="Road Closed Icon" style="width: 25px; height: 25px; margin-right: 5px;">
+        <span>Road Closed</span>
     </div>
     <div class="legend-key" data-layer="Lane Closure">
-        <img class="legend-icon" src="assets/lane-closure-icon.png" alt="Lane Closure Icon">
+        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
         <span>Lane Closure</span>
     </div>
 </div>
@@ -214,45 +213,44 @@
 mapboxgl.accessToken = 'pk.eyJ1IjoibWVsdG9uZ2lzZGV2IiwiYSI6ImNtN2R6eGNxdjA4ZzcybXB4a2ZvYmxobjMifQ.ERlG4u3iz8HiKljoB92J3A';
 const map = new mapboxgl.Map({
   container: 'map',
-  style: 'mapbox://styles/mapbox/streets-v12',
+  style: 'mapbox://styles/mapbox/light-v11',
   center: [144.6261962, -37.712486],
   zoom: 11.5,
   pitch: 40,
   bearing: 5
 });
-window.map = map;
 
-map.on('load', () => {
- // Add Mapbox vector source for street names
-  map.addSource('Streetnames_Source', {
-    type: 'vector',
-    url: 'mapbox://styles/mapbox/streets-v12'
-  });
+// map.on('load', () => {
+//  // Add Mapbox vector source for street names
+//   map.addSource('Streetnames_Source', {
+//     type: 'vector',
+//     url: 'mapbox://styles/mapbox/light-v11'
+//   });
 
-  // Add streetnames symbol layer above all layers
-  map.addLayer({
-    id: 'Streetnames_Layer',
-    type: 'symbol',
-    source: 'Streetnames_Source',
-    'source-layer': 'road',
-    minzoom: 13,
-    layout: {
-      'text-field': ['get', 'name'],
-      'text-font': ['Filson Pro Regular', 'Filson Pro Regular'],
-      'text-size': 12,
-      'symbol-placement': 'line',
-      'visibility': 'visible',
-      'text-letter-spacing': 0.1,
-      'text-padding': 2
-    },
-    paint: {
-      'text-color': '#5a5b5c',
-      'text-halo-color': 'rgba(255,255,255,0.85)',
-      'text-halo-width': 2,
-      'text-halo-blur': 1
-    }
-  });
-});
+//   // Add streetnames symbol layer above all layers
+//   map.addLayer({
+//     id: 'Streetnames_Layer',
+//     type: 'symbol',
+//     source: 'Streetnames_Source',
+//     'source-layer': 'road',
+//     minzoom: 13,
+//     layout: {
+//       'text-field': ['get', 'name'],
+//       'text-font': ['Filson Pro Regular', 'Filson Pro Regular'],
+//       'text-size': 12,
+//       'symbol-placement': 'line',
+//       'visibility': 'visible',
+//       'text-letter-spacing': 0.1,
+//       'text-padding': 2
+//     },
+//     paint: {
+//       'text-color': '#5a5b5c',
+//       'text-halo-color': 'rgba(255,255,255,0.85)',
+//       'text-halo-width': 2,
+//       'text-halo-blur': 1
+//     }
+//   });
+// });
 
 
 
@@ -267,26 +265,26 @@ document.querySelectorAll('.legend-key').forEach(item => {
 });
     
 
-function focusOnCurrentLocation() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(position => {
-            const userCoords = [position.coords.longitude, position.coords.latitude];
+// function focusOnCurrentLocation() {
+//     if (navigator.geolocation) {
+//         navigator.geolocation.getCurrentPosition(position => {
+//             const userCoords = [position.coords.longitude, position.coords.latitude];
             
-            // Set map center and zoom level to focus on user's location
-            map.flyTo({
-                center: userCoords,
-                zoom: 13.5, 
-                essential: true 
-            });
-        }, error => {
-            console.error("Error retrieving location:", error);
-        });
-    } else {
-        console.error("Geolocation is not supported by this browser.");
-    }
-}
+//             // Set map center and zoom level to focus on user's location
+//             map.flyTo({
+//                 center: userCoords,
+//                 zoom: 13.5, 
+//                 essential: true 
+//             });
+//         }, error => {
+//             console.error("Error retrieving location:", error);
+//         });
+//     } else {
+//         console.error("Geolocation is not supported by this browser.");
+//     }
+// }
 
-focusOnCurrentLocation();
+// focusOnCurrentLocation();
 
 // Add navigation controls to the map
 map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
@@ -646,7 +644,6 @@ layers.forEach(layer => {
             { label: 'Description of Works', value: properties.website_description },
             { label: 'Road Work Start Date', value: formatDate(properties.road_work_start_date) },
             { label: 'Road Work End Date', value: formatDate(properties.road_work_end_date) },
-            { label: 'Traffic Impact', value: properties.traffic_impact },
             { label: 'Road Work Type', value: properties.road_work_type },
             { label: 'Expected Delay', value: properties.expected_delay }
         ];
