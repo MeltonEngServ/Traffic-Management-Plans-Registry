@@ -12,7 +12,7 @@
     <div class="tooltip" id="tooltip"></div>
     <div id="searchBar">
         <input type="text" id="address" placeholder="Enter an address" autocomplete="off" />
-        <div id="suggestions" style="position: absolute; background: white; border: 1px solid #ccc; z-index: 10; display: none;"></div>
+        <div id="suggestions" style="position: absolute; background: white; border: 1px solid #ccc; z-index: 1; display: none;"></div>
     </div>
 
     <div id="modal" class="modal">
@@ -23,51 +23,109 @@
     </div>
 
     <style>
-        body { margin: 0; padding: 0; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif; 
+            background: #f6f8fa;
+        }
         #map { position: absolute; top: 0; bottom: 0; width: 100%; }
         .mapboxgl-ctrl-logo {
             display: none !important;
         }
         #legend {
             position: absolute;
-            bottom: 20px;
-            left: 10px;
-            background-color: white;
-            padding: 7.5px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            bottom: 24px;
+            left: 16px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: none;
+            padding: 8px 10px 6px 10px;
+            min-width: 110px;
+            border: 1px solid #e5e7eb;
+            transition: box-shadow 0.2s;
+        }
+        #legend:hover {
+            box-shadow: none;
+        }
+        .legend-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #222;
+            letter-spacing: 0.01em;
         }
         .legend-key {
             display: flex;
             align-items: center;
-            margin-bottom: 5px;
+            font-size: 1em;
+            margin-bottom: 6px;
             cursor: pointer;
+            border-radius: 6px;
+            padding: 3px 4px;
+            transition: background 0.14s;
         }
-        .legend-color {
+        .legend-key:last-child { margin-bottom: 0; }
+        .legend-key:hover {
+            background: #f3f6fa;
+        }
+        .legend-key.selected {
+            background: #e6f0ff;
+        }
+        .legend-icon {
             width: 20px;
             height: 20px;
-            margin-right: 10px;
+            margin-right: 7px;
+            border-radius: 3px;
+            background: none;
+            border: none;
+            box-shadow: none;
+        }
+        .legend-key span {
+            font-size: 0.98em;
+            color: #222;
+            font-weight: 500;
         }
         #searchBar {
             position: absolute;
-            top: 10px;
-            left: 10px;
-            background-color: white;
-            padding: 7px;
-            border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            top: 14px;
+            left: 16px;
+            background: none;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: none;
             z-index: 1;
+            border: none;
+        }
+        #searchBar input[type="text"] {
+            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+            font-size: 0.98em;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 5px 8px;
+            outline: none;
+            width: 170px;
+            transition: border 0.14s;
+            background: #fff;
+        }
+        #searchBar input[type="text"]:focus {
+            border: 1.5px solid #0078d4;
+        }
+        #suggestions {
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            font-size: 0.98em;
         }
         #dateFilter {
             position: absolute;
             bottom: 10px;
             left: 10px;
             background-color: white;
-            padding: 10px;
+            padding: 8px;
             border-radius: 5px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         }
-
         .modal {
             display: none;
             position: fixed; 
@@ -77,95 +135,136 @@
             width: 100%; 
             height: 100%; 
             overflow: auto; 
-            background-color: rgba(0, 0, 0, 0.6);
+            background-color: rgba(0, 0, 0, 0.5);
         }
-        
         .modal-content {
-            background-color: #fefefe;
+            background-color: #fff;
             position: absolute;
             top: 40%;
             left: 50%;
             transform: translate(-50%, -50%);
-            padding: 15px; 
-            border: 1px solid #888;
-            width: 90%;
-            max-width: 400px;
+            padding: 16px 12px 12px 12px;
+            border: 1px solid #e5e7eb;
+            width: 92%;
+            max-width: 340px;
             max-height: 80%; 
             overflow-y: auto; 
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+            border-radius: 10px;
+            font-size: 0.98em;
         }
-        
+        .modal-content h3 {
+            margin-top: 0;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
         .modal-content p {
             margin: 5px 0;
-            line-height: 1.2;
+            line-height: 1.25;
+            color: #222;
         }
-        
         .close-button {
             color: #aaa;
             float: right;
-            font-size: 24px;
+            font-size: 22px;
             font-weight: bold;
+            margin-top: -4px;
         }
-        
         .close-button:hover,
         .close-button:focus {
-            color: black;
+            color: #0078d4;
             text-decoration: none;
             cursor: pointer;
         }
-        
-        @media (max-width: 200px) {
-            .modal-content {
-                width: 95%;
-            }
-        }
-        
-        #legend {
-            user-select: none; 
-        }
-
-        .legend-key {
+        .modal-content img.enlargeable-image {
+            max-width: 100%;
+            margin-bottom: 6px;
+            border-radius: 4px;
             cursor: pointer;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        @media (max-width: 600px) {
+            #legend { left: 50%; transform: translateX(-50%); min-width: 90px; padding: 6px 2px; }
+            #searchBar { left: 50%; transform: translateX(-50%); width: 95vw; }
+            .modal-content { width: 98vw; max-width: 98vw; }
         }
         #legend, #legend * {
             font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
+            user-select: none;
         }
-        #searchBar input[type="text"] {
-            font-family: 'Segoe UI', Arial, Helvetica, sans-serif !important;
-        }
-        </style>
-
+    </style>
 
 <div id="legend">
+    <div class="legend-title">Legend</div>
     <div class="legend-key" data-layer="Road Closed">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/road-closed-icon.png" alt="Road Closed Icon" style="width: 25px; height: 25px; margin-right: 5px;">
-        <span>Road Closed</span>
+        <img class="legend-icon" src="assets/road-closed-icon.png" alt="Road Closed Icon">
+        <span>Road Closure</span>
     </div>
     <div class="legend-key" data-layer="Lane Closure">
-        <img class="legend-icon" src="https://raw.githubusercontent.com/MeltonEngServ/Traffic-Management-Plans-Registry/refs/heads/main/assets/lane-closure-icon.png" alt="Lane Closure Icon" style="width: 25px; height: 25px; margin-right: 5px;">
+        <img class="legend-icon" src="assets/lane-closure-icon.png" alt="Lane Closure Icon">
         <span>Lane Closure</span>
     </div>
 </div>
     
     <script>
-        mapboxgl.accessToken = 'pk.eyJ1IjoibWVsdG9uZ2lzZGV2IiwiYSI6ImNtN2R6dmVzajA5N3gyaW9ocGxmc3QzdncifQ.cIKsH3me3VO5FXG2h5mumg';
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11',
-            center: [144.646838,-37.712344],
-            zoom: 11
-        });
-    
-        const tooltip = document.getElementById('tooltip');
-        const dateInput = document.getElementById('dateInput');
-        const slider = document.getElementById('slider');
-        const visibilityStates = {};
-    
-        document.querySelectorAll('.legend-key').forEach(item => {
-            const layerId = item.getAttribute('data-layer');
-            visibilityStates[layerId] = true; 
-        });
+
+mapboxgl.accessToken = 'pk.eyJ1IjoibWVsdG9uZ2lzZGV2IiwiYSI6ImNtN2R6eGNxdjA4ZzcybXB4a2ZvYmxobjMifQ.ERlG4u3iz8HiKljoB92J3A';
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v12',
+  center: [144.6261962, -37.712486],
+  zoom: 11.5,
+  pitch: 40,
+  bearing: 5
+});
+window.map = map;
+
+map.on('load', () => {
+ // Add Mapbox vector source for street names
+  map.addSource('Streetnames_Source', {
+    type: 'vector',
+    url: 'mapbox://styles/mapbox/streets-v12'
+  });
+
+  // Add streetnames symbol layer above all layers
+  map.addLayer({
+    id: 'Streetnames_Layer',
+    type: 'symbol',
+    source: 'Streetnames_Source',
+    'source-layer': 'road',
+    minzoom: 13,
+    layout: {
+      'text-field': ['get', 'name'],
+      'text-font': ['Filson Pro Regular', 'Filson Pro Regular'],
+      'text-size': 12,
+      'symbol-placement': 'line',
+      'visibility': 'visible',
+      'text-letter-spacing': 0.1,
+      'text-padding': 2
+    },
+    paint: {
+      'text-color': '#5a5b5c',
+      'text-halo-color': 'rgba(255,255,255,0.85)',
+      'text-halo-width': 2,
+      'text-halo-blur': 1
+    }
+  });
+});
+
+
+
+const tooltip = document.getElementById('tooltip');
+const dateInput = document.getElementById('dateInput');
+const slider = document.getElementById('slider');
+const visibilityStates = {};
+
+document.querySelectorAll('.legend-key').forEach(item => {
+    const layerId = item.getAttribute('data-layer');
+    visibilityStates[layerId] = true; 
+});
     
 
 function focusOnCurrentLocation() {
@@ -279,7 +378,7 @@ function parseDateString(dateString) {
     return new Date(year, month - 1, day);
 }
 
-let visibleStatuses = [];  
+let visibleStatuses = ['Road Closed', 'Lane Closure'];
 
 // Function to filter data based on selected date and visible statuses
 function FilterData() {
@@ -291,6 +390,12 @@ function FilterData() {
 
     // Only show specific statuses
     const allowedStatuses = ['Road Closed', 'Lane Closure'];
+
+    // If no visibleStatuses, show nothing
+    if (visibleStatuses.length === 0) {
+        map.getSource('Source1').setData({ type: 'FeatureCollection', features: [] });
+        return;
+    }
 
     // Filter features based on allowed statuses, visible statuses, and show_on_map field
     const filteredFeatures = geojsonData.features.filter(feature => {
@@ -306,7 +411,7 @@ function FilterData() {
         // Show if roadwork is currently active or will start in the next 2 weeks
         const isCurrent = roadWorkStart && roadWorkEnd && today >= roadWorkStart && today <= roadWorkEnd;
         const isUpcoming = roadWorkStart && roadWorkStart > today && roadWorkStart <= twoWeeksFromToday;
-        const isStatusVisible = visibleStatuses.length === 0 || (status && visibleStatuses.includes(status));
+        const isStatusVisible = status && visibleStatuses.includes(status);
         return (isCurrent || isUpcoming) && isStatusVisible;
     });
 
@@ -321,32 +426,17 @@ function FilterData() {
 
 // Event listener to legend items
 document.querySelectorAll('.legend-key').forEach(item => {
+    const layerId = item.getAttribute('data-layer');
+    // Set initial opacity based on visibleStatuses
+    item.style.opacity = visibleStatuses.includes(layerId) ? '1' : '0.5';
     item.addEventListener('click', () => {
-        const layerId = item.getAttribute('data-layer');
-
-        // Toggle the status in visibleStatuses
         if (visibleStatuses.includes(layerId)) {
-            // If already in visibleStatuses, remove it
             visibleStatuses = visibleStatuses.filter(status => status !== layerId);
         } else {
-            // If not in visibleStatuses, add it
             visibleStatuses.push(layerId);
         }
-
-        // Check if no filters are selected
-        if (visibleStatuses.length === 0) {
-            // Set all legend items to full opacity
-            document.querySelectorAll('.legend-key').forEach(legendItem => {
-                legendItem.style.opacity = '1';
-            });
-        } else {
-            // Update opacity of all legend items based on selection
-            document.querySelectorAll('.legend-key').forEach(legendItem => {
-                const legendLayerId = legendItem.getAttribute('data-layer');
-                legendItem.style.opacity = visibleStatuses.includes(legendLayerId) ? '1' : '0.5';
-            });
-        }
-
+        // Update only this legend item's opacity
+        item.style.opacity = visibleStatuses.includes(layerId) ? '1' : '0.5';
         // Apply the filter based on updated visibleStatuses
         FilterData();
     });
@@ -546,7 +636,7 @@ layers.forEach(layer => {
     map.on('click', layer, (e) => {
         const properties = e.features[0].properties;
 
-        let modalContent = `<h3>${properties.road || 'N/A'}</h3>`;
+        let modalContent = `<h2>${properties.road || 'N/A'}</h2>`;
 
         // Array of fields
         const fields = [
